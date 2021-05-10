@@ -63,7 +63,7 @@ def nr_main(a):
         ind = argsort(eig)
         eig = eig[ind]
         return [eig[0],eig[-1]], eig
-    # Normal tesst
+    # Normal test
     err = norm(dot(conj(transpose(a)),a) - dot(a,conj(transpose(a))),ord='fro')
     if(err < max(TOL*nrm,TOL)):
         eig = eigvals(a)
