@@ -71,7 +71,11 @@ def nr_main(a):
         convHull.append(convHull[0])
         return convHull, eig
     # eigenvalues and inscribed polygon vertices (for non-normal matrices)
-    r = 3
+    return _nr_sub(a,3), eigvals(a)
+###############################################
+###             Numerical Range Sub         ###
+###############################################
+def _nr_sub(a,r):
     e = [0 for k in range(r+1)]
     p = [0 for k in range(r+1)]
     for k in range(r):
@@ -99,44 +103,11 @@ def nr_main(a):
     # compute area
     s1 = poly_area(p)
     s2 = poly_area(q)
-    # refine approximation
-    return _nr_sub(a,e,p,q,n,r,s1,s2)
-###############################################
-###             Numerical Range Sub         ###
-###############################################
-def _nr_sub(a,e,p,q,n,r,s1,s2):
-    while((s2-s1)>TOL2*s2):
-        # update r
-        r = 2*r
-        e = [0 for k in range(r+1)]
-        p = [0 for k in range(r+1)]
-        for k in range(r):
-            # multiply by complex exponential
-            a1 = exp(2*pi*1j*k/r)*a
-            # compute hermitian part
-            a2 = (a1 + transpose(conj(a1)))/2
-            # compute eigenvalues and eigenvectors of hermitian part
-            eigval, eigvec = eigh(a2)
-            # sort eigenvalues and store maximum eigenvalue and associated inscribed polygonal vertex
-            ind = argsort(eigval)
-            eigval = eigval[ind]
-            e[r-k] = eigval[-1]
-            eigvec = eigvec[:,ind]
-            p[r-k] = dot(conj(eigvec[:,-1]),dot(a,eigvec[:,-1]))
-        # complete cycle
-        e[0] = e[r]
-        p[0] = p[r]
-        # compute circumscribed polygon vertices
-        q = [0 for k in range(r+1)]
-        for k in range(r):
-            q[r-k] = exp(-2*pi*1j*k/r)*(e[k]+1j*(e[k]*cos(2*pi/r)-e[k+1])/sin(2*pi/r))
-        # complete cycle
-        q[0] = q[r]
-        # compute area
-        s1 = poly_area(p)
-        s2 = poly_area(q)
-    # return
-    return q, eigvals(a)
+    # return or recurse
+    if ((s2-s1)<=TOL2*s2):
+        return q
+    else:
+        return _nr_sub(a,2*r)
 ###############################################
 ###         Restricted Laplacian            ###
 ###############################################
