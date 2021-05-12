@@ -1,15 +1,16 @@
 # Restricted Numerical Range Functions
-from numpy import argsort, array, conj, cos, diag, dot, exp, imag, pi, real, sin, sum, transpose, zeros
+from numpy import argsort, array, conj, cos, diag, dot, exp, eye, imag, pi, real, sin, sum, transpose, zeros
 from numpy.linalg import eigh, eigvals, eigvalsh, norm
 from nauty_directg_reader import digraph6
 from networkx import DiGraph, draw_shell
 from sys import stdin
 from matplotlib import pyplot as plt
+from functools import lru_cache
 
 # Tolerance Parameters
 EPS = 2**(-52)
 TOL = 2**(-42)
-TOL2 = 2**(-12)
+TOL2 = 2**(-18)
 
 ###############################################
 ###             Cmplx Convex Hull           ###
@@ -65,49 +66,63 @@ def nr_main(a):
         return [eig[0],eig[-1]], eig
     # Normal test
     err = norm(dot(conj(transpose(a)),a) - dot(a,conj(transpose(a))),ord='fro')
+    eig = eigvals(a)
     if(err < max(TOL*nrm,TOL)):
-        eig = eigvals(a)
         convHull = cmplxConvHull(eig)
         convHull.append(convHull[0])
         return convHull, eig
     # eigenvalues and inscribed polygon vertices (for non-normal matrices)
-    return _nr_sub(a,3), eigvals(a)
+    # Caching wrapper for _nr_at(a, ...)
+    @lru_cache(maxsize=None)
+    def nr_at_fn(angl):
+        return _nr_at(a, angl)
+    angls = [0, 0.25, 0.5, 0.75, 1]
+    p = [nr_at_fn(angl)[1] for angl in angls]
+    ind = 0
+    for k in range(len(angls)-1):
+        ind = _nr_sub(nr_at_fn, angls, p, ind)
+    # May not be needed, but doesn't hurt
+    nr_at_fn.cache_clear()
+    return p, eig
+
+# Function to compute eigenvalue, etc. data for the Hermitian part of a rotation of the matrix
+def _nr_at(a,angl):
+    # multiply by complex exponential
+    a1 = exp(2*pi*1j*angl)*a
+    # compute hermitian part
+    a2 = (a1 + transpose(conj(a1)))/2
+    # compute eigenvalues and eigenvectors of hermitian part
+    eigval, eigvec = eigh(a2)
+    # sort eigenvalues and return maximum eigenvalue and associated inscribed polygonal vertex
+    ind = argsort(eigval)
+    eigval = eigval[ind][-1]
+    eigvec = eigvec[:,ind][:,-1]
+    return eigval, dot(conj(eigvec),dot(a,eigvec))
+
 ###############################################
 ###             Numerical Range Sub         ###
 ###############################################
-def _nr_sub(a,r):
-    e = [0 for k in range(r+1)]
-    p = [0 for k in range(r+1)]
-    for k in range(r):
-        # multiply by complex exponential
-        a1 = exp(2*pi*1j*k/r)*a
-        # compute hermitian part
-        a2 = (a1 + transpose(conj(a1)))/2
-        # compute eigenvalues and eigenvectors of hermitian part
-        eigval, eigvec = eigh(a2)
-        # sort eigenvalues and store maximum eigenvalue and associated inscribed polygonal vertex
-        ind = argsort(eigval)
-        eigval = eigval[ind]
-        e[r-k] = eigval[-1]
-        eigvec = eigvec[:,ind]
-        p[r-k] = dot(conj(eigvec[:,-1]),dot(a,eigvec[:,-1]))
-    # complete cycle
-    e[0] = e[r]
-    p[0] = p[r]
-    # compute circumscribed polygon vertices
-    q = [0 for k in range(r+1)]
-    for k in range(r):
-        q[r-k] = exp(-2*pi*1j*k/r)*(e[k]+1j*(e[k]*cos(2*pi/r)-e[k+1])/sin(2*pi/r))
-    # complete cycle
-    q[0] = q[r]
-    # compute area
-    s1 = poly_area(p)
-    s2 = poly_area(q)
-    # return or recurse
-    if ((s2-s1)<=TOL2*s2):
-        return q
+def _nr_sub(nr_at_fn,angls,p,ind0):
+    a0 = angls[ind0]
+    a1 = angls[ind0+1]
+    da = a1 - a0
+    ax = a1 + da
+    e0, p0 = nr_at_fn(a0)
+    e1, p1 = nr_at_fn(a1)
+    ex, px = nr_at_fn(ax)
+    q0 = exp(-2*pi*1j*a0)*(e0+1j*(e0*cos(2*pi*da)-e1)/sin(2*pi*da))
+    q1 = exp(-2*pi*1j*a1)*(e1+1j*(e1*cos(2*pi*da)-ex)/sin(2*pi*da))
+    area = poly_area([p0,p1,q1,q0,p0])
+    # return or sub-divide
+    if (area<=TOL2):
+        return ind0 + 1
     else:
-        return _nr_sub(a,2*r)
+        am = a0 + da / 2
+        em, pm = nr_at_fn(am)
+        angls.insert(ind0 + 1, am)
+        p.insert(ind0 + 1, pm)
+        indm = _nr_sub(nr_at_fn, angls, p, ind0)
+        return _nr_sub(nr_at_fn, angls, p, indm)
 ###############################################
 ###         Restricted Laplacian            ###
 ###############################################
