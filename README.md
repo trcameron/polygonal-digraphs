@@ -9,3 +9,5 @@ Python and C++ files for the study of polygonal digraphs.
 	* [Email: H.Tracy@gmail.com](mailto:H.Tracy@gmail.com)
 * [Ben Small]
 	* [Email: bentsm@gmail.com](mailto:bentsm@gmail.com)
+* [Alexander Wiedemann]
+	* [Email: alexanderwiedemann@rmc.edu](mailto:alexanderwiedemann@rmc.edu)
