@@ -2,7 +2,7 @@
 #   Polygonal-Digraphs Make Include File    		#
 #####################################################
 NAUTY = /usr/local/Cellar/nauty/27r1/bin
-PYTHON = python3
+PYTHON = python3.8
 N = 3
 # ---------------------------------------------------------------------
 # Compiler selection 
@@ -11,7 +11,7 @@ CCC = g++ -std=gnu++2a
 # ---------------------------------------------------------------------
 # Compiler options 
 # ---------------------------------------------------------------------
-CCOPT = -Ofast -march=native -mtune=native -DMIN_VERTS=2 -DMAX_VERTS=8 -DNO_DYNAMIC_SIZE -DNDEBUG -Wno-deprecated-anon-enum-enum-conversion
+CCOPT = -Ofast -march=native -mtune=native -DMIN_VERTS=2 -DMAX_VERTS=8 -DNDEBUG -Wno-deprecated-anon-enum-enum-conversion
 # ---------------------------------------------------------------------
 # Include options
 # ---------------------------------------------------------------------

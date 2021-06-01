@@ -51,6 +51,9 @@ def save_fig(l,name,ratio,nrows,ncols,layout_fn=shell_layout,**layout_args):
 ###############################################
 def main():
     try:
+        # non-poly-zero-alpha
+        l = array([[2,-1,0,-1,0],[0,1,-1,0,0],[-1,0,1,0,0],[0,0,0,1,-1],[0,0,0,0,0]])
+        save_fig(l,"epsfiles/non-poly-zero-alpha.eps",1,1,2)
         # case 1 (cycle)
         l = array([[1,-1,0,0,0,0],[0,1,-1,0,0,0],[0,0,1,-1,0,0],[0,0,0,1,-1,0],[0,0,0,0,1,-1],[-1,0,0,0,0,1]],dtype=float)
         save_fig(l,"epsfiles/case1.eps",0.6,2,1)
